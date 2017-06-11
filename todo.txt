@@ -1,0 +1,25 @@
+vieport dla RTS
+skalowanie - gra nie skaluje sie ze wzgledu na rozmiar okna, lecz gracz ma wplyw na to jak daleko widziec chce mape
+zrobic gre z 5 obiektami ktore mozna poruszac myszka, w pelni skalowany model - > bedzie zaimplementowany pozniej w projekcie
+
+
+todo:
+
+
+
+dokladne trafienie w kwadrat jest jest obrocony/ 2 kolka skladajace sie na kwadrat? prostokat
+
+zaznaczanie jednostek, finalnie 5 na mapie
+
+
+
+
+
+
+
+
+Zalozenia:
+-dynamizm
+-prostota
+-strategia
+-zaawansowane ai

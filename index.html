@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      background-color: white;
+    }
+
+    html,
+    body {
+      overflow: hidden;
+    }
+
+    body {
+      background: gray;
+    }
+  </style>
+</head>
+
+<body onload="startGame()">
+  <script>
+
+    // predefined
+    var view = new position();
+    var scale = 1;
+    // map image
+    var map = new Image();
+    map.src = "map.png";
+    // load canvas by id once body loaded
+    var loaded = false;
+    // mouse positioning
+    var mouseX;
+    var mouseY;
+    var mapDragX;
+    var mapDragY;
+    var mapDragging = false;
+
+
+    /////////////////////////////////////////////////////////////////////////////////////////////// main loop
+    function updateGameArea() {
+      myGameArea.canvas.width = window.innerWidth;
+      myGameArea.canvas.height = window.innerHeight;
+      myGameArea.clear();
+
+      // scaling
+      if (myGameArea.keys && myGameArea.keys[88]) {
+        scale += 0.02 * scale;
+      }
+      if (myGameArea.keys && myGameArea.keys[90]) {
+        scale -= 0.02 * scale;
+      }
+
+
+
+      // drawing map
+      var ctx = myGameArea.context;
+      ctx.drawImage(map,
+        window.innerWidth / 2 - view.x * scale,
+        window.innerHeight / 2 - view.y * scale,
+        map.width * scale,
+        map.height * scale
+      );
+
+      view.update();
+
+
+
+
+      if (!loaded) {
+        var canvas = document.getElementById('myCanvas');
+        var context = canvas.getContext('2d');
+        canvas.onmousewheel = function(event) {
+          var wheel = event.wheelDelta / 1000;
+          var zoom = 1 + wheel;
+          scale *= zoom;
+        }
+
+        canvas.addEventListener("mousedown", leftDown, false);
+
+        function leftDown(event) {
+
+          if (event.button === 0) {
+            mapDragX = view.x + mouseX * 1 / scale;
+            mapDragY = view.y + mouseY * 1 / scale;
+            mapDragging = true;
+          }
+        }
+
+        canvas.addEventListener("mouseup", leftUp, false);
+
+        function leftUp(event) {
+          if (event.button === 0) {
+            mapDragging = false;
+            console.log(mapDragX - mouseX);
+            console.log(mapDragY - mouseY);
+          }
+        }
+
+
+        canvas.addEventListener('mousemove', function(evt) {
+          var mousePos = getMousePos(canvas, evt);
+          mouseX = mousePos.x;
+          mouseY = mousePos.y;
+        }, false);
+
+        function getMousePos(canvas, evt) {
+          var rect = canvas.getBoundingClientRect();
+          return {
+            x: evt.clientX - rect.left,
+            y: evt.clientY - rect.top
+          };
+        }
+
+        loaded = true;
+      }
+
+      if (mapDragging) {
+        view.x = (mapDragX - mouseX * 1 / scale);
+        view.y = (mapDragY - mouseY * 1 / scale);
+      } else {}
+
+
+    }
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////// object
+    function component(width, height, color, x, y) {
+      // ratio 1:1
+      this.constWidth = width;
+      this.constHeight = height;
+      // scaled size
+      this.width = width * scale;
+      this.height = height * scale;
+
+      this.speed = 0;
+      this.angle = 0;
+      this.moveAngle = 0;
+      this.x = x;
+      this.y = y;
+      this.update = function() {
+        this.width = width * scale;
+        this.height = height * scale;
+        var ctx = myGameArea.context;
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.fillStyle = color;
+        ctx.fillRect(this.width / -2, this.height / -2, this.width, this.height);
+        ctx.restore();
+        this.angle += this.moveAngle * Math.PI / 180;
+        this.x += this.speed * Math.sin(this.angle);
+        this.y -= this.speed * Math.cos(this.angle);
+      }
+    }
+
+    // viewer position
+    function position() {
+
+      this.x = 0;
+      this.y = 0;
+
+      this.update = function() {
+
+
+        if (myGameArea.keys && myGameArea.keys[65]) {
+          this.x -= 7 * 1 / scale;
+        }
+        if (myGameArea.keys && myGameArea.keys[68]) {
+          this.x += 7 * 1 / scale;
+        }
+        if (myGameArea.keys && myGameArea.keys[87]) {
+          this.y -= 7 * 1 / scale;
+        }
+        if (myGameArea.keys && myGameArea.keys[83]) {
+          this.y += 7 * 1 / scale;
+        }
+        var ctx = myGameArea.context;
+        ctx.save();
+        ctx.translate(window.innerWidth / 2, window.innerHeight / 2);
+        ctx.fillStyle = "black";
+        ctx.fillRect(20 / -2 * scale, 20 / -2 * scale, 20 * scale, 20 * scale);
+        ctx.restore();
+      }
+    }
+
+
+    ////////////////////////////////////////////////////////////////////// main game interval
+    function startGame() {
+      myGameArea.start();
+    }
+
+    var myGameArea = {
+      canvas: document.createElement("canvas"),
+
+      start: function() {
+
+        this.canvas.id = "myCanvas";
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        this.frameNo = 0;
+        this.interval = setInterval(updateGameArea, 20);
+        window.addEventListener('keydown', function(e) {
+          e.preventDefault();
+          myGameArea.keys = (myGameArea.keys || []);
+          myGameArea.keys[e.keyCode] = (e.type == "keydown");
+        })
+        window.addEventListener('keyup', function(e) {
+          myGameArea.keys[e.keyCode] = (e.type == "keydown");
+        })
+      },
+
+      stop: function() {
+        clearInterval(this.interval);
+      },
+
+      clear: function() {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      }
+    }
+  </script>
+</body>
+
+</html>
